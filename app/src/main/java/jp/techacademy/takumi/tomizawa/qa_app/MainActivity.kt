@@ -9,91 +9,23 @@ import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityMainBinding
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener  {
     private lateinit var binding: ActivityMainBinding
 
     private var genre = 0
 
-    // ----- 追加:ここから -----
     private lateinit var databaseReference: DatabaseReference
     private lateinit var questionArrayList: ArrayList<Question>
     private lateinit var adapter: QuestionsListAdapter
 
-    private var genreRef: DatabaseReference? = null
-
-    private val eventListener = object : ChildEventListener {
-        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
-            val map = dataSnapshot.value as Map<*, *>
-            val title = map["title"] as? String ?: ""
-            val body = map["body"] as? String ?: ""
-            val name = map["name"] as? String ?: ""
-            val uid = map["uid"] as? String ?: ""
-            val imageString = map["image"] as? String ?: ""
-            val bytes =
-                if (imageString.isNotEmpty()) {
-                    Base64.decode(imageString, Base64.DEFAULT)
-                } else {
-                    byteArrayOf()
-                }
-
-            val answerArrayList = ArrayList<Answer>()
-            val answerMap = map["answers"] as Map<*, *>?
-            if (answerMap != null) {
-                for (key in answerMap.keys) {
-                    val map1 = answerMap[key] as Map<*, *>
-                    val map1Body = map1["body"] as? String ?: ""
-                    val map1Name = map1["name"] as? String ?: ""
-                    val map1Uid = map1["uid"] as? String ?: ""
-                    val map1AnswerUid = key as? String ?: ""
-                    val answer = Answer(map1Body, map1Name, map1Uid, map1AnswerUid)
-                    answerArrayList.add(answer)
-                }
-            }
-
-            val question = Question(
-                title, body, name, uid, dataSnapshot.key ?: "",
-                genre, bytes, answerArrayList
-            )
-            questionArrayList.add(question)
-            adapter.notifyDataSetChanged()
-        }
-
-        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
-            val map = dataSnapshot.value as Map<*, *>
-
-            // 変更があったQuestionを探す
-            for (question in questionArrayList) {
-                if (dataSnapshot.key.equals(question.questionUid)) {
-                    // このアプリで変更がある可能性があるのは回答（Answer)のみ
-                    question.answers.clear()
-                    val answerMap = map["answers"] as Map<*, *>?
-                    if (answerMap != null) {
-                        for (key in answerMap.keys) {
-                            val map1 = answerMap[key] as Map<*, *>
-                            val map1Body = map1["body"] as? String ?: ""
-                            val map1Name = map1["name"] as? String ?: ""
-                            val map1Uid = map1["uid"] as? String ?: ""
-                            val map1AnswerUid = key as? String ?: ""
-                            val answer = Answer(map1Body, map1Name, map1Uid, map1AnswerUid)
-                            question.answers.add(answer)
-                        }
-                    }
-
-                    adapter.notifyDataSetChanged()
-                }
-            }
-        }
-
-        override fun onChildRemoved(p0: DataSnapshot) {}
-        override fun onChildMoved(p0: DataSnapshot, p1: String?) {}
-        override fun onCancelled(p0: DatabaseError) {}
-    }
-    // ----- 追加:ここまで -----
+    private var snapshotListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -149,26 +81,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         questionArrayList = ArrayList()
         adapter.notifyDataSetChanged()
 
-        // ----- 追加:ここから -----
         binding.content.inner.listView.setOnItemClickListener { _, _, position, _ ->
             // Questionのインスタンスを渡して質問詳細画面を起動する
             val intent = Intent(applicationContext, QuestionDetailActivity::class.java)
             intent.putExtra("question", questionArrayList[position])
             startActivity(intent)
         }
-        // ----- 追加:ここまで -----
     }
+
 
     override fun onResume() {
         super.onResume()
         val navigationView = findViewById<NavigationView>(R.id.nav_view)
 
         // 1:趣味を既定の選択とする
-        if (genre == 0) {
+        if(genre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
         }
     }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
@@ -209,20 +139,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         binding.drawerLayout.closeDrawer(GravityCompat.START)
 
-        // ----- 追加:ここから -----
         // 質問のリストをクリアしてから再度Adapterにセットし、AdapterをListViewにセットし直す
         questionArrayList.clear()
         adapter.setQuestionArrayList(questionArrayList)
         binding.content.inner.listView.adapter = adapter
 
-        // 選択したジャンルにリスナーを登録する
-        if (genreRef != null) {
-            genreRef!!.removeEventListener(eventListener)
-        }
-        genreRef = databaseReference.child(ContentsPATH).child(genre.toString())
-        genreRef!!.addChildEventListener(eventListener)
-        // ----- 追加:ここまで -----
+        // 一つ前のリスナーを消す
+        snapshotListener?.remove()
 
+        // 選択したジャンルにリスナーを登録する
+        snapshotListener = FirebaseFirestore.getInstance()
+            .collection(ContentsPATH)
+            .whereEqualTo("genre", genre)
+            .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                if (firebaseFirestoreException != null) {
+                    // 取得エラー
+                    return@addSnapshotListener
+                }
+                var questions = listOf<Question>()
+                val results = querySnapshot?.toObjects(FireStoreQuestion::class.java)
+                results?.also {
+                    questions = it.map { firestoreQuestion ->
+                        val bytes =
+                            if (firestoreQuestion.image.isNotEmpty()) {
+                                Base64.decode(firestoreQuestion.image, Base64.DEFAULT)
+                            } else {
+                                byteArrayOf()
+                            }
+                        Question(firestoreQuestion.title, firestoreQuestion.body, firestoreQuestion.name, firestoreQuestion.uid,
+                            firestoreQuestion.id, firestoreQuestion.genre, bytes, firestoreQuestion.answers)
+                    }
+                }
+                questionArrayList.clear()
+                questionArrayList.addAll(questions)
+                adapter.notifyDataSetChanged()
+            }
         return true
     }
 }

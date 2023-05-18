@@ -24,7 +24,10 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+// ----- 変更:ここから
+// import com.google.firebase.database.FirebaseDatabase
+// ----- 変更:ここまで
+import com.google.firebase.firestore.FirebaseFirestore
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityQuestionSendBinding
 import java.io.ByteArrayOutputStream
 
@@ -128,6 +131,8 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             val im = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             im.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS)
 
+            // ----- 変更: ここから
+            /*
             val dataBaseReference = FirebaseDatabase.getInstance().reference
             val genreRef = dataBaseReference.child(ContentsPATH).child(genre.toString())
 
@@ -135,6 +140,8 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
             // UID
             data["uid"] = FirebaseAuth.getInstance().currentUser!!.uid
+            */
+            // ----- 変更: ここまで
 
             // タイトルと本文を取得する
             val title = binding.titleText.text.toString()
@@ -156,9 +163,21 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             val sp = PreferenceManager.getDefaultSharedPreferences(this)
             val name = sp.getString(NameKEY, "")
 
+            // ----- 変更: ここから
+            /*
             data["title"] = title
             data["body"] = body
             data["name"] = name!!
+             */
+            // FirestoreQuestionのインスタンスを作成し、値を詰めていく
+            val fireStoreQuestion = FireStoreQuestion()
+
+            fireStoreQuestion.uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            fireStoreQuestion.title = title
+            fireStoreQuestion.body = body
+            fireStoreQuestion.name = name!!
+            fireStoreQuestion.genre = genre
+            // ----- 変更: ここまで
 
             // 添付画像を取得する
             val drawable = binding.imageView.drawable as? BitmapDrawable
@@ -171,10 +190,33 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 val bitmapString =
                     Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT)
 
-                data["image"] = bitmapString
+                // ----- 変更: ここから
+                // data["image"] = bitmapString
+                fireStoreQuestion.image = bitmapString
+                // ----- 変更: ここまで
             }
 
-            genreRef.push().setValue(data, this)
+            // ----- 変更: ここから
+            // genreRef.push().setValue(data, this)
+            FirebaseFirestore.getInstance()
+                .collection(ContentsPATH)
+                .document(fireStoreQuestion.id)
+                .set(fireStoreQuestion)
+                .addOnSuccessListener {
+                    binding.progressBar.visibility = View.GONE
+                    finish()
+                }
+                .addOnFailureListener {
+                    it.printStackTrace()
+                    binding.progressBar.visibility = View.GONE
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        getString(R.string.question_send_error_message),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            // ----- 変更: ここまで
+
             binding.progressBar.visibility = View.VISIBLE
         }
     }
