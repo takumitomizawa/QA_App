@@ -11,7 +11,8 @@ class Question(
     val questionUid: String,
     val genre: Int,
     bytes: ByteArray,
-    val answers: ArrayList<Answer>
+    val answers: ArrayList<Answer>,
+    var isFavorite: Boolean
 ) : Serializable {
     val imageBytes: ByteArray
 

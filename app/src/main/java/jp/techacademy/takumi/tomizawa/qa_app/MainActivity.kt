@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val body = map["body"] as? String ?: ""
             val name = map["name"] as? String ?: ""
             val uid = map["uid"] as? String ?: ""
+            val genre = map["genre"] as? Int ?: 0
             val imageString = map["image"] as? String ?: ""
             val bytes =
                 if (imageString.isNotEmpty()) {
@@ -56,8 +57,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             val question = Question(
-                title, body, name, uid, dataSnapshot.key ?: "",
-                genre, bytes, answerArrayList
+                title, body, name, uid,dataSnapshot.key ?: "",
+                genre, bytes, answerArrayList, true
             )
             questionArrayList.add(question)
             adapter.notifyDataSetChanged()

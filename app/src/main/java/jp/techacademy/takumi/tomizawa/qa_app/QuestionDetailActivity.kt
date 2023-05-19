@@ -20,6 +20,8 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var adapter: QuestionDetailListAdapter
     private lateinit var answerRef: DatabaseReference
 
+    private var isFavorite: Boolean = false
+
     private val eventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
             val map = dataSnapshot.value as Map<*, *>
@@ -96,11 +98,28 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                 val intent = Intent(applicationContext, LoginActivity::class.java)
                 startActivity(intent)
             } else {
-                binding.fabFavorite.apply {
-                    hide()
-                    setImageResource(R.drawable.ic_star)
-                    show()
-                }
+                val favoriteRef = FirebaseDatabase.getInstance().reference
+                    .child("favorites")
+                    .child(user.uid)
+                    .child(question.questionUid)
+
+                favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        if (dataSnapshot.value == null) {
+                            // お気に入り登録されていない場合に登録処理をする
+                            favoriteRef.setValue(true)
+                            binding.fabFavorite.setImageResource(R.drawable.ic_star)
+                        } else {
+                            // お気に入りに登録済みの場合はお気に入りから削除する
+                            favoriteRef.removeValue()
+                            binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        // エラー処理を記述
+                    }
+                })
             }
         }
 
@@ -108,6 +127,30 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
         answerRef = dataBaseReference.child(ContentsPATH).child(question.genre.toString())
             .child(question.questionUid).child(AnswersPATH)
         answerRef.addChildEventListener(eventListener)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // お気に入り状態の取得
+        answerRef.child("isFavorite").addListenerForSingleValueEvent(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isFavorite = snapshot.getValue(Boolean::class.java) ?: false
+                updateFavoriteImage()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+        })
+    }
+
+    private fun updateFavoriteImage(){
+        if (isFavorite){
+            binding.fabFavorite.setImageResource(R.drawable.ic_star)
+        }else{
+            binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
+        }
     }
 
     override fun onClick(v: View) {
