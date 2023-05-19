@@ -1,14 +1,19 @@
 package jp.techacademy.takumi.tomizawa.qa_app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import androidx.preference.PreferenceManager
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityQuestionDetailBinding
 
-class QuestionDetailActivity : AppCompatActivity() {
+class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityQuestionDetailBinding
 
     private lateinit var question: Question
@@ -48,6 +53,8 @@ class QuestionDetailActivity : AppCompatActivity() {
         binding = ActivityQuestionDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        //binding.fabFavorite.setOnClickListener(this)
+
         // 渡ってきたQuestionのオブジェクトを保持する
         // API33以上でgetSerializableExtra(key)が非推奨となったため処理を分岐
         @Suppress("UNCHECKED_CAST", "DEPRECATION", "DEPRECATED_SYNTAX_WITH_DEFINITELY_NOT_NULL")
@@ -81,9 +88,59 @@ class QuestionDetailActivity : AppCompatActivity() {
             }
         }
 
+        binding.fabFavorite.setOnClickListener {
+            val user = FirebaseAuth.getInstance().currentUser
+
+            if (user == null) {
+                // ログインしていなければログイン画面に遷移させる
+                val intent = Intent(applicationContext, LoginActivity::class.java)
+                startActivity(intent)
+            } else {
+                binding.fabFavorite.apply {
+                    hide()
+                    setImageResource(R.drawable.ic_star)
+                    show()
+                }
+            }
+        }
+
         val dataBaseReference = FirebaseDatabase.getInstance().reference
         answerRef = dataBaseReference.child(ContentsPATH).child(question.genre.toString())
             .child(question.questionUid).child(AnswersPATH)
         answerRef.addChildEventListener(eventListener)
+    }
+
+    override fun onClick(v: View) {
+        // キーボードが出てたら閉じる
+        val im = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        im.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+
+        val dataBaseReference = FirebaseDatabase.getInstance().reference
+        val answerRef = dataBaseReference.child(ContentsPATH).child(question.genre.toString())
+            .child(question.questionUid).child(AnswersPATH)
+
+        val data = HashMap<String, String>()
+
+        // UID
+        data["uid"] = FirebaseAuth.getInstance().currentUser!!.uid
+
+        // 表示名
+        // Preferenceから名前を取る
+        val sp = PreferenceManager.getDefaultSharedPreferences(this)
+        val name = sp.getString(NameKEY, "")
+        data["name"] = name!!
+
+        // 回答を取得する
+        /*val answer = binding.answerEditText.text.toString()
+
+        if (answer.isEmpty()) {
+            // 回答が入力されていない時はエラーを表示するだけ
+            Snackbar.make(v, getString(R.string.answer_error_message), Snackbar.LENGTH_LONG).show()
+            return
+        }
+        data["body"] = answer
+
+        binding.progressBar.visibility = View.VISIBLE*/
+        answerRef.push().setValue(data, this)
     }
 }

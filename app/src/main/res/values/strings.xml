@@ -49,5 +49,6 @@
 
     <string name="send_answer_failure">投稿に失敗しました</string>
     <string name="answer_error_message">回答を入力してください</string>
+    <string name="menu_favorite_label">お気に入り</string>
 
 </resources>

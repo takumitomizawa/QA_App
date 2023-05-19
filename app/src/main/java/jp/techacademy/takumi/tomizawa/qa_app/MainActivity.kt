@@ -205,6 +205,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 binding.content.toolbar.title = getString(R.string.menu_computer_label)
                 genre = 4
             }
+            R.id.nav_favorite -> {
+                binding.content.toolbar.title = getString(R.string.menu_favorite_label)
+                genre = 5
+            }
         }
 
         binding.drawerLayout.closeDrawer(GravityCompat.START)
