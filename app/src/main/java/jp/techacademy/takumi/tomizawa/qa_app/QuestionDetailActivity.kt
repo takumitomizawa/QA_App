@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.preference.PreferenceManager
@@ -55,8 +56,6 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
         binding = ActivityQuestionDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //binding.fabFavorite.setOnClickListener(this)
-
         // 渡ってきたQuestionのオブジェクトを保持する
         // API33以上でgetSerializableExtra(key)が非推奨となったため処理を分岐
         @Suppress("UNCHECKED_CAST", "DEPRECATION", "DEPRECATED_SYNTAX_WITH_DEFINITELY_NOT_NULL")
@@ -99,8 +98,9 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                 startActivity(intent)
             } else {
                 val favoriteRef = FirebaseDatabase.getInstance().reference
-                    .child("favorites")
+                    .child("users")
                     .child(user.uid)
+                    .child("favorites")
                     .child(question.questionUid)
 
                 favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -131,24 +131,48 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onResume() {
         super.onResume()
+        Log.d("test", "onResume通過")
 
-        // お気に入り状態の取得
-        answerRef.child("isFavorite").addListenerForSingleValueEvent(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isFavorite = snapshot.getValue(Boolean::class.java) ?: false
-                updateFavoriteImage()
-            }
+        val user = FirebaseAuth.getInstance().currentUser
 
-            override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
-            }
-        })
+        if (user != null){
+            Log.d("test", "if文通過")
+            val favoriteRef = FirebaseDatabase.getInstance().reference
+                .child("users")
+                .child(user.uid)
+                .child("favorites")
+                .child(question.questionUid)
+
+            favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener{
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val isFavorite = snapshot.exists()
+                    Log.d("test", "addListener通過")
+
+                    if (isFavorite){
+                        Log.d("test", "お気に入り登録済み通過")
+                        // お気に入り登録済みの場合
+                        binding.fabFavorite.setImageResource(R.drawable.ic_star)
+                    }else{
+                        Log.d("test", "お気に入り未登録通過")
+                        // お気に入り登録されていない場合
+                        binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    TODO("Not yet implemented")
+                }
+            })
+        }else{
+            // ログインしていない場合
+            binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
+        }
     }
 
-    private fun updateFavoriteImage(){
-        if (isFavorite){
+    private fun updateFavoriteImage() {
+        if (isFavorite) {
             binding.fabFavorite.setImageResource(R.drawable.ic_star)
-        }else{
+        } else {
             binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
         }
     }
@@ -173,8 +197,8 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
         val name = sp.getString(NameKEY, "")
         data["name"] = name!!
 
-        // 回答を取得する
-        /*val answer = binding.answerEditText.text.toString()
+        /*// 回答を取得する
+        val answer = binding.answerEditText.text.toString()
 
         if (answer.isEmpty()) {
             // 回答が入力されていない時はエラーを表示するだけ
@@ -184,6 +208,10 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
         data["body"] = answer
 
         binding.progressBar.visibility = View.VISIBLE*/
-        answerRef.push().setValue(data, this)
+
+        if (::answerRef.isInitialized){
+            answerRef.setValue(true)
+        }
+        //answerRef.push().setValue(data, this)
     }
 }

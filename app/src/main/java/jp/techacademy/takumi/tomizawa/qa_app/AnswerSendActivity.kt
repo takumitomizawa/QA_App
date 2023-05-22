@@ -57,8 +57,11 @@ class AnswerSendActivity : AppCompatActivity(), View.OnClickListener,
         im.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 
         val dataBaseReference = FirebaseDatabase.getInstance().reference
-        val answerRef = dataBaseReference.child(ContentsPATH).child(question.genre.toString())
-            .child(question.questionUid).child(AnswersPATH)
+        val answerRef = dataBaseReference
+            .child(ContentsPATH)
+            .child(question.genre.toString())
+            .child(question.questionUid)
+            .child(AnswersPATH)
 
         val data = HashMap<String, String>()
 
