@@ -14,11 +14,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityQuestionDetailBinding
 
-data class Favorite(
-    val genre: Int = 0,
-    val favorite: Boolean = false
-)
-
 class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityQuestionDetailBinding
 
@@ -26,7 +21,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var adapter: QuestionDetailListAdapter
     private lateinit var answerRef: DatabaseReference
 
-    private var isFavorite: Boolean = false
+    //private var isFavorite: Boolean = false
 
     private val eventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
@@ -108,6 +103,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                     .child(question.questionUid)
                     .child("genre")
 
+                //favoriteRef.child("genre").setValue(question.genre)
                 favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         if (dataSnapshot.value == null) {
@@ -152,8 +148,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     //val isFavorite = snapshot.getValue(Boolean::class.java)
 
-                    val favoriteData = snapshot.getValue(Favorite::class.java)
-                    val isFavorite = favoriteData?.favorite ?: false
+                    val isFavorite = snapshot.getValue(Int::class.java) == question.genre
                     Log.d("test", "addListener通過")
 
                     if (isFavorite) {
@@ -173,14 +168,6 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
             })
         } else {
             // ログインしていない場合
-            binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
-        }
-    }
-
-    private fun updateFavoriteImage() {
-        if (isFavorite) {
-            binding.fabFavorite.setImageResource(R.drawable.ic_star)
-        } else {
             binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
         }
     }
