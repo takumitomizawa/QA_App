@@ -14,6 +14,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityQuestionDetailBinding
 
+data class Favorite(
+    val genre: Int = 0,
+    val favorite: Boolean = false
+)
+
 class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityQuestionDetailBinding
 
@@ -98,16 +103,16 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                 startActivity(intent)
             } else {
                 val favoriteRef = FirebaseDatabase.getInstance().reference
-                    .child("users")
-                    .child(user.uid)
                     .child("favorites")
+                    .child(user.uid)
                     .child(question.questionUid)
+                    .child("genre")
 
                 favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         if (dataSnapshot.value == null) {
                             // お気に入り登録されていない場合に登録処理をする
-                            favoriteRef.setValue(true)
+                            favoriteRef.setValue(question.genre)
                             binding.fabFavorite.setImageResource(R.drawable.ic_star)
                         } else {
                             // お気に入りに登録済みの場合はお気に入りから削除する
@@ -135,24 +140,27 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
 
         val user = FirebaseAuth.getInstance().currentUser
 
-        if (user != null){
+        if (user != null) {
             Log.d("test", "if文通過")
             val favoriteRef = FirebaseDatabase.getInstance().reference
-                .child("users")
-                .child(user.uid)
                 .child("favorites")
+                .child(user.uid)
                 .child(question.questionUid)
+                .child("genre")
 
-            favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener{
+            favoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val isFavorite = snapshot.exists()
+                    //val isFavorite = snapshot.getValue(Boolean::class.java)
+
+                    val favoriteData = snapshot.getValue(Favorite::class.java)
+                    val isFavorite = favoriteData?.favorite ?: false
                     Log.d("test", "addListener通過")
 
-                    if (isFavorite){
+                    if (isFavorite) {
                         Log.d("test", "お気に入り登録済み通過")
                         // お気に入り登録済みの場合
                         binding.fabFavorite.setImageResource(R.drawable.ic_star)
-                    }else{
+                    } else {
                         Log.d("test", "お気に入り未登録通過")
                         // お気に入り登録されていない場合
                         binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
@@ -163,7 +171,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                     TODO("Not yet implemented")
                 }
             })
-        }else{
+        } else {
             // ログインしていない場合
             binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
         }
@@ -209,7 +217,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
 
         binding.progressBar.visibility = View.VISIBLE*/
 
-        if (::answerRef.isInitialized){
+        if (::answerRef.isInitialized) {
             answerRef.setValue(true)
         }
         //answerRef.push().setValue(data, this)
