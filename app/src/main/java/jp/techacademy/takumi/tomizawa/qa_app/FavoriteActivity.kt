@@ -4,10 +4,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Base64
 import android.widget.ListView
-import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.protobuf.Value
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityFavoriteBinding
 
 class FavoriteActivity : AppCompatActivity() {
@@ -26,18 +24,17 @@ class FavoriteActivity : AppCompatActivity() {
         binding.favoriteListView.adapter = adapter
     }
 
-    private fun getFavoriteQuestion(): Question {
+    private fun getFavoriteQuestion(): ArrayList<Question> {
         //お気に入りの質問を取得する処理を実装する
         val user = FirebaseAuth.getInstance().currentUser
         val databaseRef: DatabaseReference =
             FirebaseDatabase.getInstance().reference.child("favorites").child(user!!.uid)
-
-        val question: Question? = null
+        val questionList: ArrayList<Question> = ArrayList()
 
         databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    val questionIdList: ArrayList<Question>
+                    val questionIdList = ArrayList<String>()
                     for (snapshot in dataSnapshot.children) {
                         val questionId = snapshot.key
                         questionId?.let { questionIdList.add(it) }
@@ -54,7 +51,6 @@ class FavoriteActivity : AppCompatActivity() {
                                 val body = map["body"] as? String ?: ""
                                 val name = map["name"] as? String ?: ""
                                 val uid = map["uid"] as? String ?: ""
-                                //val genre = map["genre"] as? Int ?: 0
                                 val imageString = map["image"] as? String ?: ""
                                 val bytes =
                                     if (imageString.isNotEmpty()) {
@@ -82,8 +78,9 @@ class FavoriteActivity : AppCompatActivity() {
                                     title, body, name, uid,dataSnapshot.key ?: "",
                                     genre, bytes, answerArrayList, true
                                 )
-                                questionIdList.add(question)
-                                adapter.notifyDataSetChanged()
+                                questionList.add(question)
+
+                                adapter.addAllQuestions(questionList)
                             }
 
                             override fun onCancelled(error: DatabaseError) {
@@ -98,6 +95,6 @@ class FavoriteActivity : AppCompatActivity() {
                 TODO("Not yet implemented")
             }
         })
-        return question!!
+        return questionList
     }
 }
