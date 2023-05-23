@@ -3,19 +3,14 @@ package jp.techacademy.takumi.tomizawa.qa_app
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import android.view.Menu
 import android.view.MenuItem
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class FavoriteActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var binding: ActivityMainBinding
 
     private var genre = 0
@@ -102,47 +97,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.content.toolbar)
-
-        binding.content.fab.setOnClickListener {
-            // ジャンルを選択していない場合はメッセージを表示するだけ
-            if (genre == 0) {
-                Snackbar.make(
-                    it,
-                    getString(R.string.question_no_select_genre),
-                    Snackbar.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
-            }
-
-            // ログイン済みのユーザーを取得する
-            val user = FirebaseAuth.getInstance().currentUser
-
-            // ログインしていなければログイン画面に遷移させる
-            if (user == null) {
-                val intent = Intent(applicationContext, LoginActivity::class.java)
-                startActivity(intent)
-            } else {
-                // ジャンルを渡して質問作成画面を起動する
-                val intent = Intent(applicationContext, QuestionSendActivity::class.java)
-                intent.putExtra("genre", genre)
-                startActivity(intent)
-            }
-        }
-
-        // ナビゲーションドロワーの設定
-        val toggle = ActionBarDrawerToggle(
-            this,
-            binding.drawerLayout,
-            binding.content.toolbar,
-            R.string.app_name,
-            R.string.app_name
-        )
-        binding.drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-
-        binding.navView.setNavigationItemSelectedListener(this)
-
         // Firebase
         databaseReference = FirebaseDatabase.getInstance().reference
 
@@ -169,12 +123,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (genre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

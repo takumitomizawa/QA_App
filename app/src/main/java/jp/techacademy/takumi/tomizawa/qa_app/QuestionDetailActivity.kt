@@ -66,6 +66,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
 
         title = question.title
 
+
         // ListViewの準備
         adapter = QuestionDetailListAdapter(this, question)
         binding.listView.adapter = adapter
@@ -97,6 +98,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                 val intent = Intent(applicationContext, LoginActivity::class.java)
                 startActivity(intent)
             } else {
+
                 val favoriteRef = FirebaseDatabase.getInstance().reference
                     .child("favorites")
                     .child(user.uid)
@@ -108,6 +110,7 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         if (dataSnapshot.value == null) {
                             // お気に入り登録されていない場合に登録処理をする
+                            Log.d("test ジャンルの値", question.genre.toString())
                             favoriteRef.setValue(question.genre)
                             binding.fabFavorite.setImageResource(R.drawable.ic_star)
                         } else {
@@ -132,12 +135,10 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onResume() {
         super.onResume()
-        Log.d("test", "onResume通過")
 
         val user = FirebaseAuth.getInstance().currentUser
 
         if (user != null) {
-            Log.d("test", "if文通過")
             val favoriteRef = FirebaseDatabase.getInstance().reference
                 .child("favorites")
                 .child(user.uid)
@@ -149,14 +150,11 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
                     //val isFavorite = snapshot.getValue(Boolean::class.java)
 
                     val isFavorite = snapshot.getValue(Int::class.java) == question.genre
-                    Log.d("test", "addListener通過")
 
                     if (isFavorite) {
-                        Log.d("test", "お気に入り登録済み通過")
                         // お気に入り登録済みの場合
                         binding.fabFavorite.setImageResource(R.drawable.ic_star)
                     } else {
-                        Log.d("test", "お気に入り未登録通過")
                         // お気に入り登録されていない場合
                         binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
                     }
