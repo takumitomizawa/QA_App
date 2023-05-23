@@ -20,6 +20,9 @@
             android:name=".FavoriteActivity"
             android:exported="false" />
         <activity
+            android:name=".Favorite"
+            android:exported="false" />
+        <activity
             android:name=".AnswerSendActivity"
             android:exported="false" />
         <activity
