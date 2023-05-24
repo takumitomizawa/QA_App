@@ -55,4 +55,10 @@ class QuestionsListAdapter(context: Context) : BaseAdapter() {
     fun setQuestionArrayList(questionArrayList: ArrayList<Question>) {
         this.questionArrayList = questionArrayList
     }
+
+    fun addAllQuestions(questions: ArrayList<Question>){
+        questionArrayList.clear()
+        questionArrayList.addAll(questions)
+        notifyDataSetChanged()
+    }
 }

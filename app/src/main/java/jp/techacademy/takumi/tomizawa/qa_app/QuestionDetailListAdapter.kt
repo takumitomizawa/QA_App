@@ -11,7 +11,6 @@ import jp.techacademy.takumi.tomizawa.qa_app.databinding.ListAnswerBinding
 import jp.techacademy.takumi.tomizawa.qa_app.databinding.ListQuestionDetailBinding
 
 class QuestionDetailListAdapter(context: Context, private val question: Question) : BaseAdapter() {
-    private val questionList: ArrayList<Question> = ArrayList()
 
     companion object {
         private const val TYPE_QUESTION = 0
@@ -83,11 +82,5 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
 
             return view
         }
-    }
-
-    fun addAllQuestions(questions: ArrayList<Question>){
-        questionList.clear()
-        questionList.addAll(questions)
-        notifyDataSetChanged()
     }
 }
