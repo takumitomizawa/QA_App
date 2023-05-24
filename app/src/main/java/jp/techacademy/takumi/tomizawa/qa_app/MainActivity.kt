@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             val question = Question(
                 title, body, name, uid,dataSnapshot.key ?: "",
-                genre, bytes, answerArrayList, true
+                genre, bytes, answerArrayList
             )
             questionArrayList.add(question)
             adapter.notifyDataSetChanged()
