@@ -163,6 +163,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onResume() {
         super.onResume()
         val navigationView = findViewById<NavigationView>(R.id.nav_view)
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null){
+            val favoriteMenuItem = navigationView.menu.findItem(R.id.nav_favorite)
+            favoriteMenuItem.isVisible = true
+        }else{
+            val favoriteMenuItem = navigationView.menu.findItem(R.id.nav_favorite)
+            favoriteMenuItem.isVisible = false
+        }
 
         // 1:趣味を既定の選択とする
         if (genre == 0) {
@@ -189,28 +197,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.nav_hobby -> {
-                binding.content.toolbar.title = getString(R.string.menu_hobby_label)
-                genre = 1
+            when (item.itemId) {
+                R.id.nav_hobby -> {
+                    binding.content.toolbar.title = getString(R.string.menu_hobby_label)
+                    genre = 1
+                }
+                R.id.nav_life -> {
+                    binding.content.toolbar.title = getString(R.string.menu_life_label)
+                    genre = 2
+                }
+                R.id.nav_health -> {
+                    binding.content.toolbar.title = getString(R.string.menu_health_label)
+                    genre = 3
+                }
+                R.id.nav_computer -> {
+                    binding.content.toolbar.title = getString(R.string.menu_computer_label)
+                    genre = 4
+                }
+                R.id.nav_favorite -> {
+                    val intent = Intent(this, FavoriteActivity::class.java)
+                    startActivity(intent)
+                }
             }
-            R.id.nav_life -> {
-                binding.content.toolbar.title = getString(R.string.menu_life_label)
-                genre = 2
-            }
-            R.id.nav_health -> {
-                binding.content.toolbar.title = getString(R.string.menu_health_label)
-                genre = 3
-            }
-            R.id.nav_computer -> {
-                binding.content.toolbar.title = getString(R.string.menu_computer_label)
-                genre = 4
-            }
-            R.id.nav_favorite -> {
-                val intent = Intent(this, FavoriteActivity::class.java)
-                startActivity(intent)
-            }
-        }
 
         binding.drawerLayout.closeDrawer(GravityCompat.START)
 

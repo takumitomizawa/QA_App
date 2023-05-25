@@ -30,10 +30,6 @@ class FavoriteActivity : AppCompatActivity(), NavigationView.OnNavigationItemSel
 
             val map = dataSnapshot.value as Map<*, *>
             val questionId = dataSnapshot.key ?: ""
-            Log.d("test", map.keys.toString())
-            Log.d("test", map.values.toString())
-            Log.d("test", map.toString())
-            Log.d("test", map.toString())
 
             val genre = map["genre"].toString()
 

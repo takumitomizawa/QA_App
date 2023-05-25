@@ -136,8 +136,11 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
         super.onResume()
 
         val user = FirebaseAuth.getInstance().currentUser
+        val favoriteFab = binding.fabFavorite
 
         if (user != null) {
+            favoriteFab.visibility = View.VISIBLE
+
             val favoriteRef = FirebaseDatabase.getInstance().reference
                 .child("favorites")
                 .child(user.uid)
@@ -165,7 +168,8 @@ class QuestionDetailActivity : AppCompatActivity(), View.OnClickListener {
             })
         } else {
             // ログインしていない場合
-            binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
+            favoriteFab.visibility = View.GONE
+            //binding.fabFavorite.setImageResource(R.drawable.ic_star_border)
         }
     }
 
